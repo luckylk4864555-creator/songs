@@ -272,7 +272,6 @@
     else { applySavedMode(); if(id === 'trendingTab') renderTrending(); }
   };
 
-  // UPDATED playSong with Notification Support
   window.playSong = (idx) => {
     if(idx < 0 || idx >= allSongs.length) return;
     currentIndex = idx; hasCounted = false;
@@ -282,44 +281,9 @@
     document.getElementById('pName').innerText = s.name;
     player.classList.add('show'); saveToRecent(s); applySavedMode();
     document.getElementById('playPauseBtn').innerText = "⏸";
-
-    // Media Session API for Notification Controls
-    if ('mediaSession' in navigator) {
-        navigator.mediaSession.metadata = new MediaMetadata({
-            title: s.name,
-            artist: 'Pro Music Player',
-            album: 'New Releases',
-            artwork: [
-                { src: s.img, sizes: '96x96',   type: 'image/jpeg' },
-                { src: s.img, sizes: '128x128', type: 'image/jpeg' },
-                { src: s.img, sizes: '192x192', type: 'image/jpeg' },
-                { src: s.img, sizes: '256x256', type: 'image/jpeg' },
-                { src: s.img, sizes: '384x384', type: 'image/jpeg' },
-                { src: s.img, sizes: '512x512', type: 'image/jpeg' },
-            ]
-        });
-
-        navigator.mediaSession.setActionHandler('play', () => { audio.play(); });
-        navigator.mediaSession.setActionHandler('pause', () => { audio.pause(); });
-        navigator.mediaSession.setActionHandler('previoustrack', () => { playPrev(); });
-        navigator.mediaSession.setActionHandler('nexttrack', () => { playNext(); });
-    }
   };
 
-  // UPDATED togglePlay with Notification Sync
-  window.togglePlay = (e) => { 
-    e.stopPropagation(); 
-    if (audio.paused) { 
-        audio.play(); 
-        document.getElementById('playPauseBtn').innerText = "⏸";
-        if ('mediaSession' in navigator) navigator.mediaSession.playbackState = "playing";
-    } else { 
-        audio.pause(); 
-        document.getElementById('playPauseBtn').innerText = "▶️";
-        if ('mediaSession' in navigator) navigator.mediaSession.playbackState = "paused";
-    } 
-  };
-
+  window.togglePlay = (e) => { e.stopPropagation(); if (audio.paused) { audio.play(); document.getElementById('playPauseBtn').innerText = "⏸"; } else { audio.pause(); document.getElementById('playPauseBtn').innerText = "▶️"; } };
   window.toggleMini = (e) => { e.stopPropagation(); player.classList.add('mini-mode'); savePlayerMode('mini'); };
   window.expandPlayer = () => { if(player.classList.contains('mini-mode')) { player.classList.remove('mini-mode'); savePlayerMode('full'); } };
   window.changeSpeed = (e) => { e.stopPropagation(); let speeds = [0.5, 1.0, 1.5, 2.0]; let cur = audio.playbackRate; let next = speeds[(speeds.indexOf(cur) + 1) % speeds.length]; audio.playbackRate = next; document.getElementById('speedBtn').innerText = next + "x"; };
@@ -346,16 +310,6 @@
       seekBar.value = Math.floor(audio.currentTime);
       document.getElementById('curT').innerText = formatTime(audio.currentTime);
       document.getElementById('totT').innerText = formatTime(audio.duration);
-
-      // Notification Progress Sync
-      if ('mediaSession' in navigator && 'setPositionState' in navigator.mediaSession) {
-          navigator.mediaSession.setPositionState({
-              duration: audio.duration,
-              playbackRate: audio.playbackRate,
-              position: audio.currentTime
-          });
-      }
-
       if (!hasCounted && (audio.currentTime / audio.duration) > 0.75) {
         hasCounted = true;
         const dbId = allSongs[currentIndex].id.replace(/[.#$\[\]]/g, "_");
